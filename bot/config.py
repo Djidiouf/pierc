@@ -1,3 +1,5 @@
+# Compatibility mode for python 2 old code
+from future.utils import iteritems
 
 def config(filename):
     """ Process a file (located at filename)
@@ -20,10 +22,10 @@ def config(filename):
         db_file.close()
         return config_data
     except:
-        print filename, "missing."
-        exit();
+        print(filename, "missing.")
+        exit()
 
 if __name__ == "__main__":
-    irc_config = config("mysql_config.txt")
-    for key,value in irc_config.iteritems():
-        print key, value
+    irc_config = config("../mysql_config.txt")
+    for key,value in iteritems(irc_config):
+        print(key, value)

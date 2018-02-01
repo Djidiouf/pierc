@@ -2,9 +2,8 @@
 #
 
 #libs
-from ircbot import SingleServerIRCBot
-from irclib import nm_to_n, nm_to_h, irc_lower, ip_numstr_to_quad, ip_quad_to_numstr
-import irclib
+import irc.client
+import irc.connection
 import sys
 import re
 import time
@@ -17,13 +16,13 @@ import config
 
 # Configuration
 
-class Logger(irclib.SimpleIRCClient):
+class Logger(irc.client.SimpleIRCClient):
 	
 	def __init__(self, server, port, channel, nick, password, username, ircname, localaddress, localport, ssl, ipv6, 
 				mysql_server, mysql_port, mysql_database, mysql_user, mysql_password):
 
 	
-		irclib.SimpleIRCClient.__init__(self)
+		irc.client.SimpleIRCClient.__init__(self)
 		
 		#IRC details
 		self.server = server
@@ -56,60 +55,60 @@ class Logger(irclib.SimpleIRCClient):
 		self.disconnect_countdown = 5
 	
 		self.last_ping = 0
-		self.ircobj.delayed_commands.append( (time.time()+5, self._no_ping, [] ) )
+#		self.reactor.delayed_commands.append( (time.time()+5, self._no_ping, [] ) )
  	
-		self.connect(self.server, self.port, self.nick, self.password, self.username, self.ircname, self.localaddress, self.localport, self.ssl, self.ipv6)
+		self.connect(self.server, self.port, self.nick, self.password, self.username, self.ircname, irc.connection.Factory())
 	
 	def _no_ping(self):
 		if self.last_ping >= 1200:
-			raise irclib.ServerNotConnectedError
+			raise irc.client.ServerNotConnectedError
 		else:
 			self.last_ping += 10
-		self.ircobj.delayed_commands.append( (time.time()+10, self._no_ping, [] ) )
+#		self.reactor.delayed_commands.append( (time.time()+10, self._no_ping, [] ) )
 
 
 	def _dispatcher(self, c, e):
 	# This determines how a new event is handled. 
-		if(e.eventtype() == "topic" or 
-		   e.eventtype() == "part" or
-		   e.eventtype() == "join" or
-		   e.eventtype() == "action" or
-		   e.eventtype() == "quit" or
-		   e.eventtype() == "nick" or
-		   e.eventtype() == "pubmsg"):
+		if(e.type == "topic" or 
+		   e.type == "part" or
+		   e.type == "join" or
+		   e.type == "action" or
+		   e.type == "quit" or
+		   e.type == "nick" or
+		   e.type == "pubmsg"):
 			try: 
-				source = e.source().split("!")[0]
+				source = e.source.split("!")[0]
 
 				# Try to parse the channel name
 				try:
-					channel = e.target()[1:]
+					channel = e.target[1:]
 				except TypeError:
 					channel = "undefined"
 
 			except IndexError:
 				source = ""
 			try:
-				text = e.arguments()[0]
+				text = e.arguments[0]
 			except IndexError:
 				text = ""
 		
 			# Print message to stdout
-			print str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + " ("+ e.eventtype() +") [#" + channel + "] <" + source + "> " + text 
+			print(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + " ("+ e.type +") [#" + channel + "] <" + source + "> " + text)
 		
 			# Prepare a message for the buffer
 			message_dict = {"channel":channel,
 							"name": source,
 							"message": text,
-							"type": e.eventtype(),
+							"type": e.type,
 							"time": str(datetime.datetime.utcnow()) } 
 							
-			if e.eventtype() == "nick":
-				message_dict["message"] = e.target()
+			if e.type == "nick":
+				message_dict["message"] = e.target
 			
 			# Most of the events are pushed to the buffer. 
 			self.message_cache.append( message_dict )
 		
-		m = "on_" + e.eventtype()	
+		m = "on_" + e.type	
 		if hasattr(self, m):
 			getattr(self, m)(c, e)
 
@@ -117,13 +116,13 @@ class Logger(irclib.SimpleIRCClient):
 		c.nick(c.get_nickname() + "_")
 
 	def on_welcome(self, connection, event):
-		if irclib.is_channel(self.target):
+		if irc.client.is_channel(self.target):
 			connection.join(self.target)
 
 	def on_disconnect(self, connection, event):
 		self.on_ping(connection, event)
 		connection.disconnect()
-		raise irclib.ServerNotConnectedError
+		raise irc.client.ServerNotConnectedError
 
 	def on_ping(self, connection, event):
 		self.last_ping = 0
@@ -135,18 +134,18 @@ class Logger(irclib.SimpleIRCClient):
 															self.mysql_password)
 			for message in self.message_cache:
 				db.insert_line(message["channel"], message["name"], message["time"], message["message"], message["type"] )
-			
+				
 			db.commit()
 			if self.disconnect_countdown < 5:
 				self.disconnect_countdown = self.disconnect_countdown + 1
-			
+				
 			del db
 			# clear the cache
 			self.message_cache = []	
 				
-		except Exception, e:
-			print "Database Commit Failed! Let's wait a bit!" 
-			print e
+		except Exception as e:
+			print("Database Commit Failed! Let's wait a bit!")
+			print(e)
 			if self.disconnect_countdown <= 0:
 				sys.exit( 0 )
 			connection.privmsg(self.channel, "Database connection lost! " + str(self.disconnect_countdown) + " retries until I give up entirely!" )
@@ -154,7 +153,7 @@ class Logger(irclib.SimpleIRCClient):
 			
 
 	def on_pubmsg(self, connection, event):
-		text = event.arguments()[0]
+		text = event.arguments[0]
 
 		# If you talk to the bot, this is how he responds.
 		if self.nick_reg.search(text):
@@ -168,8 +167,8 @@ class Logger(irclib.SimpleIRCClient):
 				return
 
 def main():
-	mysql_settings = config.config("mysql_config.txt")
-	irc_settings = config.config("irc_config.txt")
+	mysql_settings = config.config("../mysql_config.txt")
+	irc_settings = config.config("../irc_config.txt")
 	c = Logger(
 				irc_settings["server"], 
 				int(irc_settings["port"]), 
@@ -191,12 +190,11 @@ def main():
 	c.start()
 	
 if __name__ == "__main__":
-	irc_settings = config.config("irc_config.txt")
+	irc_settings = config.config("../irc_config.txt")
 	reconnect_interval = irc_settings["reconnect"]
 	while True:
 		try:
 			main()
-		except irclib.ServerNotConnectedError:
-			print "Server Not Connected! Let's try again!"             
-        	time.sleep(float(reconnect_interval))
-            
+		except irc.client.ServerNotConnectedError:
+			print("Server Not Connected! Let's try again!")
+			time.sleep(float(reconnect_interval))

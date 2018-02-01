@@ -1,4 +1,5 @@
-import MySQLdb
+# -*- coding: utf-8 -*-
+import MySQLdb  # need module mysqlclient for Python3
 import config
 import datetime
 
@@ -11,7 +12,6 @@ class Pierc_DB:
 						passwd = password,
 						db = database )
 		self.cursor = self.conn.cursor()
-			
 
 	def __del__(self):
 		try:
@@ -38,17 +38,14 @@ class Pierc_DB:
 	def insert_line(self, channel, name, time, message, msgtype, hidden = "F"):
 
 		"""
-		Sample line: "sfucsss, danly, 12:33-09/11/2009, I love hats, normal, 0"
+		Sample line: "#test, Djidiouf, 2018-01-31 23:24:53, I love hats, pubmsg, F"
 		"""
-		query =	"INSERT INTO main (channel, name, time, message, type, hidden) VALUES" + \
-		"(\""+self.conn.escape_string(channel)+ "\"," + \
-		"\""+self.conn.escape_string(name)+"\"," + \
-		"\""+time+"\"," + \
-		"\""+self.conn.escape_string(message)+"\"," + \
-		"\""+self.conn.escape_string(msgtype)+"\"," + \
-		"\""+self.conn.escape_string(hidden)+"\")"
-
-		self.cursor.execute(query)
+		insert_statement = (
+			"INSERT INTO main (channel, name, time, message, type, hidden) "
+		 	"VALUES (%s, %s, %s, %s, %s, %s)"
+		)
+		data = (self.conn.escape_string(channel), self.conn.escape_string(name), time, self.conn.escape_string(message), self.conn.escape_string(msgtype), self.conn.escape_string(hidden))
+		self.cursor.execute(insert_statement, data)
 		
 	def commit(self):
 		self.conn.commit()
@@ -61,7 +58,7 @@ if __name__ == "__main__":
 						mysql_config["user"],
 						mysql_config["password"])
 	db.create_table()
-        
-        
-        
-    
+
+
+
+
