@@ -9,19 +9,21 @@ Pierc, too, is GPLv2.
 
 # About this fork
 NEW
+
 - Pierc now works on Python 3.6 (with no backward compatibility with Python 2.x)
 - Use standard IRC library
 - No library embedded in the code base anymore
 - Cleaner SQL query
 
 CONCERNS
-- About the reconnection strategy, it's something to look at
-- SSL, tests are still needed
+
+- About the re-connection strategy, it's something to look at
 
 
 TODO
 
 In addition to figuring out the concerns mentioned above:
+
 - Making sure we use UTF-8 for inserted values in the DB
 - Fix the web interface
 - Making the python code follows the pep8 style guide

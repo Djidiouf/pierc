@@ -8,6 +8,7 @@ import sys
 import re
 import time
 import datetime
+import ssl
 
 #mine
 import pierc_db
@@ -18,7 +19,7 @@ import config
 
 class Logger(irc.client.SimpleIRCClient):
 	
-	def __init__(self, server, port, channel, nick, password, username, ircname, localaddress, localport, ssl, ipv6, 
+	def __init__(self, server, port, channel, nick, password, username, ircname, localaddress, localport, usessl, ipv6,
 				mysql_server, mysql_port, mysql_database, mysql_user, mysql_password):
 
 	
@@ -35,7 +36,7 @@ class Logger(irc.client.SimpleIRCClient):
 		self.ircname = ircname
 		self.localaddress = localaddress
 		self.localport = localport
-		self.ssl = ssl
+		self.usessl = usessl
 		self.ipv6 = ipv6
 		
 		#MySQL details
@@ -56,8 +57,13 @@ class Logger(irc.client.SimpleIRCClient):
 	
 		self.last_ping = 0
 #		self.reactor.delayed_commands.append( (time.time()+5, self._no_ping, [] ) )
- 	
-		self.connect(self.server, self.port, self.nick, self.password, self.username, self.ircname, irc.connection.Factory())
+
+		if self.usessl:
+			factory = irc.connection.Factory(wrapper=ssl.wrap_socket)
+		else:
+			factory = irc.connection.Factory()
+
+		self.connect(self.server, self.port, self.nick, self.password, self.username, self.ircname, factory)
 	
 	def _no_ping(self):
 		if self.last_ping >= 1200:
