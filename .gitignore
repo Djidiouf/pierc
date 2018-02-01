@@ -1,1 +1,13 @@
-config.php
+### PyCharm ###
+# Covers JetBrains IDE: PyCharm
+*.iml
+
+## Directory-based project format:
+.idea/
+__pycache__/
+
+## Config file
+config.cfg
+bot/irc_config.txt
+bot/mysql_config.txt
+web/config.php

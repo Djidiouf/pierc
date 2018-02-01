@@ -167,8 +167,8 @@ class Logger(irc.client.SimpleIRCClient):
 				return
 
 def main():
-	mysql_settings = config.config("../mysql_config.txt")
-	irc_settings = config.config("../irc_config.txt")
+	mysql_settings = config.config("mysql_config.txt")
+	irc_settings = config.config("irc_config.txt")
 	c = Logger(
 				irc_settings["server"], 
 				int(irc_settings["port"]), 
@@ -190,7 +190,7 @@ def main():
 	c.start()
 	
 if __name__ == "__main__":
-	irc_settings = config.config("../irc_config.txt")
+	irc_settings = config.config("irc_config.txt")
 	reconnect_interval = irc_settings["reconnect"]
 	while True:
 		try:

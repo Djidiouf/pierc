@@ -26,6 +26,6 @@ def config(filename):
         exit()
 
 if __name__ == "__main__":
-    irc_config = config("../mysql_config.txt")
+    irc_config = config("mysql_config.txt")
     for key,value in iteritems(irc_config):
         print(key, value)
