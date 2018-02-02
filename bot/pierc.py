@@ -14,6 +14,10 @@ import ssl
 import pierc_db
 import config
 
+# attempts UTF-8 but falls back to latin-1
+# Doc: https://github.com/jaraco/irc#decoding-input
+from jaraco.stream import buffer
+irc.client.ServerConnection.buffer_class = buffer.LenientDecodingLineBuffer
 
 # Configuration
 
